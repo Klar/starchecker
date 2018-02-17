@@ -22,7 +22,7 @@ try:
 		if not os.path.exists(repo._name.value):
 			print("doing a clone of %(user_reponame)s" % locals())
 			repoclone = "https://github.com/%(user_reponame)s" % locals()
-			subprocess.call(['git', 'clone', repoclone])
+			subprocess.call(['git', 'clone', repoclone, '/var/data/scripts/starchecker/repos/' + repo._name.value])
 
 			print("done: %(user_reponame)s" % locals())
 

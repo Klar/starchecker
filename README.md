@@ -1,2 +1,2 @@
 # starchecker
-clone or update of all your github starred projects
+clone or update of all your github starred projects.

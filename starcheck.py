@@ -30,6 +30,7 @@ try:
 	for repo in os.listdir(directory):
 		print repo + ":"
 		os.chdir(directory + repo)
+                subprocess.call(['git', 'checkout', 'origin/master', '.'])
 		subprocess.call(['git', 'pull'])
 except:
 	print(str(traceback.format_exc()))

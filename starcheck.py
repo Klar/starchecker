@@ -11,8 +11,7 @@ import traceback
 import os
 
 directory = "/tmp/starchecker/"
-username = ""
-password = ""
+token = "<insertTokenHere>"
 
 try:
 	g = Github(token)

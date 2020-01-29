@@ -3,18 +3,19 @@
 
 # Install
 # sudo pip install PyGithub
+# create github token with "read:user scope"
 
 from github import Github
 import subprocess
 import traceback
 import os
 
-directory = "/var/data/scripts/starchecker/repos/"
+directory = "/tmp/starchecker/"
 username = ""
 password = ""
 
 try:
-	g = Github(username, password)
+	g = Github(token)
 
 	starred_repos = g.get_user().get_starred()
 	for repo in starred_repos:
@@ -28,9 +29,9 @@ try:
 
 	print("updating repos...")
 	for repo in os.listdir(directory):
-		print repo + ":"
+		print(repo + ":")
 		os.chdir(directory + repo)
-                subprocess.call(['git', 'checkout', 'origin/master', '.'])
+		subprocess.call(['git', 'checkout', 'origin/master', '.'])
 		subprocess.call(['git', 'pull'])
 except:
 	print(str(traceback.format_exc()))

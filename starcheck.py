@@ -1,36 +1,50 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Install
-# sudo pip install PyGithub
-# create github token with "read:user scope"
-
-from github import Github
+import os
 import subprocess
 import traceback
-import os
+from github import Github
 import requests
 
+# Configuration
 move_path = "/tmp/starchecker/old/"
 directory = "/tmp/starchecker/repos/"
 token = ""
 
 
-def get_repo_url():
+def clone_repository(repo_url, destination):
     try:
-        # Run the command to get the repository URL
-        result = subprocess.run(
-            ["grep", "-m", "1", "url =", ".git/config"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        # Extract and return the repository URL
-        url = result.stdout.split()[2]
-        return url
+        subprocess.call(["git", "clone", repo_url, destination])
+        print(f"Cloned repository: {repo_url}")
+        return True
     except subprocess.CalledProcessError:
-        # Handle error if .git/config file or 'url =' line not found
-        return None
+        print(f"Failed to clone repository: {repo_url}")
+        return False
+
+
+def update_repository(directory):
+    try:
+        os.chdir(directory)
+        subprocess.call(["git", "config", "pull.rebase", "true"])
+        subprocess.call(["git", "checkout", "origin/master", "."])
+        subprocess.call(["git", "reset", "--hard"])
+        subprocess.call(["git", "pull"])
+        print(f"Updated repository: {directory}")
+        return True
+    except subprocess.CalledProcessError:
+        print(f"Failed to update repository: {directory}")
+        return False
+
+
+def move_repository(source, destination):
+    try:
+        subprocess.call(["mv", source, destination])
+        print(f"Moved repository from {source} to {destination}")
+        return True
+    except subprocess.CalledProcessError:
+        print(f"Failed to move repository from {source} to {destination}")
+        return False
 
 
 def check_git_repo_existence(repo_url):
@@ -42,34 +56,27 @@ def check_git_repo_existence(repo_url):
 
 
 try:
+    # Authenticate with GitHub
     g = Github(token)
 
+    # Get starred repositories
     starred_repos = g.get_user().get_starred()
 
+    # Clone or update repositories
     for repo in starred_repos:
-        os.chdir(directory)
-        user_reponame = repo._full_name.value
+        repo_name = repo.name
+        repo_directory = os.path.join(directory, repo_name)
 
-        if not os.path.exists(repo._name.value):
-            print("doing a clone of %(user_reponame)s" % locals())
-            subprocess.call(
-                ["git", "clone", user_reponame, directory + repo._name.value]
-            )
-            print("done: %(user_reponame)s" % locals())
-
-    for repo in os.listdir(directory):
-        os.chdir(directory + repo)
-        repo_url = get_repo_url()
-        if check_git_repo_existence(repo_url):
-            # if True:
-            print("Repository URL:", repo_url)
-            subprocess.call(["git", "config", "pull.rebase", "true"])
-            subprocess.call(["git", "checkout", "origin/master", "."])
-            subprocess.call(["git", "reset", "--hard"])
-            subprocess.call(["git", "pull"])
+        if not os.path.exists(repo_directory):
+            if clone_repository(repo.clone_url, repo_directory):
+                continue
         else:
-            print("Error: Repository URL not found.")
-            subprocess.call(["mv", directory + repo, move_path])
+            if update_repository(repo_directory):
+                continue
 
-except:
-    print(str(traceback.format_exc()))
+        # Move repository if unable to clone/update
+        move_repository(repo_directory, move_path)
+
+except Exception as e:
+    print(f"An error occurred: {e}")
+    print(traceback.format_exc())
